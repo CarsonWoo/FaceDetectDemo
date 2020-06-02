@@ -51,9 +51,12 @@ class MainActivity : AppCompatActivity(), CameraListener {
 
         mBtnSubmit = findViewById(R.id.btn_submit)
 
+        // 扫描动画开关
+        mBorderView.setScanEnabled(true)
+
         mBtnSubmit.setOnClickListener {
             mIsTakingPhoto = true
-            mBorderView.setTipsText("提交数据中...")
+            mBorderView.setTipsText("提交数据中...", true)
             mCameraHelper?.takePhoto()
             mBtnSubmit.isEnabled = false
         }
@@ -117,9 +120,10 @@ class MainActivity : AppCompatActivity(), CameraListener {
     }
 
     override fun onDestroy() {
+        super.onDestroy()
         mCameraHelper?.release()
         PermissionUtils.getInstance().destroy()
-        super.onDestroy()
+        mBorderView.stop()
     }
 
     private fun initCamera() {
@@ -178,7 +182,7 @@ class MainActivity : AppCompatActivity(), CameraListener {
     override fun onPreview(byteArray: ByteArray) {
         Log.i(TAG, "onPreview: ")
         runOnUiThread {
-            switchText("检测人脸中..")
+            switchText("检测人脸中..", true)
         }
 
         // 这里通过Base64转换类将图像数据转换格式 因为SDK检测的都用BASE64的图片
@@ -191,10 +195,10 @@ class MainActivity : AppCompatActivity(), CameraListener {
         }).start()
     }
 
-    private fun switchText(shadowContent: String) {
+    private fun switchText(shadowContent: String, stopAnim: Boolean = false) {
         runOnUiThread {
             if (shadowContent.isNotEmpty()) {
-                mBorderView.setTipsText(shadowContent)
+                mBorderView.setTipsText(shadowContent, stopAnim)
             }
         }
     }
@@ -224,8 +228,17 @@ class MainActivity : AppCompatActivity(), CameraListener {
         }
 
         runOnUiThread {
-            switchText(mShadowText)
+            switchText(mShadowText, true)
         }
         return bSuccess
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        PermissionUtils.getInstance().with(this).onRequestPermissionResult(requestCode, permissions, grantResults)
     }
 }
